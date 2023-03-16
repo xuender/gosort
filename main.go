@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"mvdan.cc/gofumpt/format"
 )
 
 var exitCode = 0
@@ -26,30 +28,42 @@ func Sort(filename string, src any) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// ast.Inspect(file, func(n ast.Node) bool {
+	// 	return true
+	// })
+	// astutil.Apply(file, func(c *astutil.Cursor) bool { return true }, func(c *astutil.Cursor) bool { return true })
 
+	// for _, decl := range file.Decls {
+	// 	fmt.Println("decl", decl.Pos(), decl.End())
+	// }
+
+	// for _, comment := range file.Comments {
+	// 	fmt.Println(comment.Pos(), comment.End())
+	// }
+	// astutil.Cursor
 	sort.Slice(file.Decls, func(indexA, indexB int) bool {
-		switch typeI := file.Decls[indexA].(type) {
+		switch typeA := file.Decls[indexA].(type) {
 		case *ast.FuncDecl:
-			if typeJ, ok := file.Decls[indexB].(*ast.FuncDecl); ok {
-				if typeI.Name.Name == "main" {
+			if typeB, ok := file.Decls[indexB].(*ast.FuncDecl); ok {
+				if typeA.Name.Name == "main" {
 					return true
 				}
 
-				if typeJ.Name.Name == "main" {
+				if typeB.Name.Name == "main" {
 					return false
 				}
 
-				return typeI.Name.Name < typeJ.Name.Name
+				return typeA.Name.Name < typeB.Name.Name
 			}
 
 			return false
 		case *ast.GenDecl:
-			if typeJ, ok := file.Decls[indexB].(*ast.GenDecl); ok {
-				if typeI.Tok == typeJ.Tok {
-					return compare(typeI.Specs, typeJ.Specs)
+			if typeB, ok := file.Decls[indexB].(*ast.GenDecl); ok {
+				if typeA.Tok == typeB.Tok {
+					return compare(typeA.Specs, typeB.Specs)
 				}
 
-				return typeI.Tok < typeJ.Tok
+				return typeA.Tok < typeB.Tok
 			}
 
 			return true
@@ -57,6 +71,17 @@ func Sort(filename string, src any) ([]byte, error) {
 
 		return false
 	})
+
+	opts := format.Options{}
+	format.File(fset, file, opts)
+
+	// for _, decl := range file.Decls {
+	// 	fmt.Println("decl", decl.Pos(), decl.End())
+	// }
+
+	// for _, comment := range file.Comments {
+	// 	fmt.Println("comment", comment.Pos(), comment.End())
+	// }
 
 	printConfig := &printer.Config{Mode: printer.TabIndent, Tabwidth: 4}
 
